@@ -16,11 +16,7 @@ const (
 type Block struct {
 	x, y float32
 }
-type Ball struct {
-	radius         float32
-	x, y           float32
-	speedX, speedY float32
-}
+
 
 type Level1 struct {
 	blocks                     []Block
@@ -42,25 +38,24 @@ func (g *Level1) Update() error {
 
 	for i := range len(g.balls) {
 		// checking if the ball is touching the inner sides of the fence
-		isBallTouchingLeftSide := g.balls[i].x-g.balls[i].radius <= float32(g.topLeftX)
-		isBallMovingTowardsLeft := g.balls[i].speedX < 0
-		isBallTouchingRightSide := g.balls[i].x+g.balls[i].radius >= float32(g.topRightX)
-		isBallMovingTowardsRight := g.balls[i].speedX > 0
+		isBallTouchingLeftSide := g.balls[i].Position.X-g.balls[i].Radius <= float32(g.topLeftX)
+		isBallMovingTowardsLeft := g.balls[i].Speed.X < 0
+		isBallTouchingRightSide := g.balls[i].Position.X+g.balls[i].Radius >= float32(g.topRightX)
+		isBallMovingTowardsRight := g.balls[i].Speed.X > 0
 		if (isBallTouchingLeftSide && isBallMovingTowardsLeft) || (isBallTouchingRightSide && isBallMovingTowardsRight) {
-			g.balls[i].speedX = -g.balls[i].speedX
+			g.balls[i].Speed.X = -g.balls[i].Speed.X
 		}
-		isBallTouchingTopSide := g.balls[i].y-g.balls[i].radius <= float32(g.topLeftY)
-		isBallMovingTowardsTop := g.balls[i].speedY < 0
-		isBallTouchingBottomSide := g.balls[i].y+g.balls[i].radius >= float32(g.bottomLeftY)
-		isBallMovingTowardsBottom := g.balls[i].speedY > 0
+		isBallTouchingTopSide := g.balls[i].Position.Y-g.balls[i].Radius <= float32(g.topLeftY)
+		isBallMovingTowardsTop := g.balls[i].Speed.Y < 0
+		isBallTouchingBottomSide := g.balls[i].Position.Y+g.balls[i].Radius >= float32(g.bottomLeftY)
+		isBallMovingTowardsBottom := g.balls[i].Speed.Y > 0
 		if (isBallTouchingTopSide && isBallMovingTowardsTop) || (isBallTouchingBottomSide && isBallMovingTowardsBottom) {
-			g.balls[i].speedY = -g.balls[i].speedY
+			g.balls[i].Speed.Y = -g.balls[i].Speed.Y
 		}
 	}
 	// Move the balls
 	for i := range len(g.balls) {
-		g.balls[i].x += g.balls[i].speedX
-		g.balls[i].y += g.balls[i].speedY
+		g.balls[i].Update()
 	}
 
 	return nil
@@ -71,7 +66,7 @@ func (g *Level1) Draw(screen *ebiten.Image) {
 		vector.FillRect(screen, block.x, block.y, blockSize, blockSize, color.RGBA{0, 0, 255, 255}, true)
 	}
 	for _, ball := range g.balls {
-		vector.FillCircle(screen, ball.x, ball.y, ball.radius, color.RGBA{255, 0, 0, 255}, true)
+		vector.FillCircle(screen, ball.Position.X, ball.Position.Y, ball.Radius, color.RGBA{255, 0, 0, 255}, true)
 	}
 }
 
@@ -93,11 +88,15 @@ func (g *Level1) AddBall() {
 	randSpeedX := float32(rand.Intn(g.maxSpeed-g.minSpeed+1) + g.minSpeed)
 	randSpeedY := float32(rand.Intn(g.maxSpeed-g.minSpeed+1) + g.minSpeed)
 	g.balls = append(g.balls, Ball{
-		radius: randRadius,
-		x:      xRand,
-		y:      yRand,
-		speedX: randSpeedX,
-		speedY: randSpeedY,
+		Radius: randRadius,
+		Position: Vector[float32]{
+			X: xRand,
+			Y:      yRand,
+		}  ,
+		Speed: Vector[float32]{
+			X: randSpeedX,
+			Y:      randSpeedY,
+		},   
 	})
 	g.nbBalls++
 }
