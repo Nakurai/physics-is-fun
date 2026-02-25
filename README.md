@@ -7,7 +7,7 @@ There is no other expectations than having fun and learning more about the [Ebit
 AI will be used. Blunders will be made. Can we reach the last level convincingly?
 
 - [x] [Level 1: Bouncing ball](https://www.youtube.com/watch?v=nXrEX6j-Mws&t=31s)
-- [ ] [Level 2: Angled walls](https://www.youtube.com/watch?v=nXrEX6j-Mws&t=132s)
+- [x] [Level 2: Angled walls](https://www.youtube.com/watch?v=nXrEX6j-Mws&t=132s)
 - [ ] [Level 3: Corners](https://www.youtube.com/watch?v=nXrEX6j-Mws&t=275s)
 - [ ] [Level 4: Colliding circles](https://www.youtube.com/watch?v=nXrEX6j-Mws&t=337s)
 - [ ] [Level 5: Ropes](https://www.youtube.com/watch?v=nXrEX6j-Mws&t=421s)
