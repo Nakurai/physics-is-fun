@@ -13,7 +13,8 @@ const (
 
 
 func main() {
-	g := Level1Init()
+	// g := Level1Init()
+	g := Level2Init()
 	
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("Physics is Fun!")
