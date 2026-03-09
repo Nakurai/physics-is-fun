@@ -38,3 +38,24 @@ func SubVectors[T constraints.Integer | constraints.Float](v1, v2 Vector[T]) Vec
 func ScaleVector[T constraints.Integer | constraints.Float](v Vector[T], scale T) Vector[T] {
 	return Vector[T]{X: v.X * scale, Y: v.Y * scale}
 }
+
+// TangentVector will rotate the vector by 90 degrees left or right and return the tangent vector
+// direction < 0 => left
+// direction > 0 => right
+func TangentVector[T constraints.Integer | constraints.Float](v Vector[T], direction int) Vector[T] {
+	if direction == 0{
+		return Vector[T]{X: v.X, Y: v.Y}
+	}else if direction > 0{
+		return Vector[T]{X: v.Y, Y: -v.X}
+	} else{
+		return Vector[T]{X: -v.Y, Y: v.X}
+	}
+}
+
+// DistanceSquared returns the distance squared (dx*dx + dy*dy)
+// Useful for performance-critical collision checks.
+func DistanceSquared[T constraints.Integer | constraints.Float](v1, v2 Vector[T]) T {
+    dx := v1.X - v2.X
+    dy := v1.Y - v2.Y
+    return dx*dx + dy*dy
+}

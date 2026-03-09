@@ -11,11 +11,12 @@ type Ball struct {
 	Speed    Vector[float32]
 }
 
-func (b *Ball) Update() {
-	b.Position.Add(b.Speed)
+func (b *Ball) Update(dt float32) {
+	scaledUpdate := ScaleVector(b.Speed, dt)
+	b.Position.Add(scaledUpdate)
 }
 
-// BounceBack reverses the velocity along the perpendicular axis from the edge, eaving the parallell axis intact
+// BounceBack reverses the velocity along the perpendicular axis from the edge, leaving the parallell axis intact
 // the formula is: new velocity = velocity - 2 (velocity . unit normal) * unit normal
 func (b *Ball) BounceBack(unitNormal Vector[float32]) {
 	dotVelocity := b.Speed.X*unitNormal.X + b.Speed.Y*unitNormal.Y

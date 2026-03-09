@@ -6,7 +6,9 @@ type Edge struct {
 	A      Vector[float32]
 	B      Vector[float32]
 	Middle Vector[float32] // middle is a point in space
-	Normal Vector[float32] // the normal vector of this edge
+	Normal Vector[float32] // the normal vector (perpendicular direction) of this edge
+	Normalized Vector[float32] // the unit vector of this edge, going from A to B
+	Length float32
 }
 
 // Middle returns a point in space. It is the middle of the edge
@@ -17,7 +19,7 @@ func (e Edge) GetMiddle() Vector[float32] {
 // Normal returns the normal vector.
 // a normal vector is a *direction*
 // it is up to the caller to apply this direction to a specific point in space to get coordonates
-func (e Edge) GetNormal() Vector[float32] {
+func (e *Edge) GetNormal() Vector[float32] {
 
 	// the slope of the edge is (dx,dy)
 	slope := SubVectors(e.B, e.A)
@@ -27,10 +29,12 @@ func (e Edge) GetNormal() Vector[float32] {
 	dx2 := math.Pow(float64(slope.X), 2)
 	dy2 := math.Pow(float64(slope.Y), 2)
 	length := float32(math.Sqrt(dx2 + dy2))
+	e.Length = length
 
 	// we normalize the original vector right away so we don't have to worry about it later
 	// to normalize a vector: (dx/L , dy/L)
 	normalized := Vector[float32]{X: slope.X / length, Y: slope.Y / length}
+	e.Normalized = normalized
 
 	// the normal formula is (-dy,dx) OR (dy,-dx)
 	normal := Vector[float32]{X: -normalized.Y, Y: normalized.X}

@@ -21,10 +21,10 @@ func (l *Level2) Update() error {
 	}
 
 	for i := range len(l.Balls) {
-		l.Balls[i].Update()
+		l.Balls[i].Update(1)
 		// collision detection
 		for _, edge := range(l.Fence.Edges){
-			// compute vector from any point of th eedge to the ball's center
+			// compute vector from any point of the edge to the ball's center
 			edgeBallVector := SubVectors(l.Balls[i].Position, edge.A)
 			
 			// calculate the dot product of the edge's normal vector and the vector above

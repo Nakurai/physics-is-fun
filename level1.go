@@ -55,7 +55,7 @@ func (g *Level1) Update() error {
 	}
 	// Move the balls
 	for i := range len(g.balls) {
-		g.balls[i].Update()
+		g.balls[i].Update(1)
 	}
 
 	return nil
