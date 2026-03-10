@@ -1,6 +1,8 @@
 package main
 
 import (
+	"image/color"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
@@ -9,6 +11,7 @@ type Ball struct {
 	Radius   float32
 	Position Vector[float32]
 	Speed    Vector[float32]
+	Color color.RGBA
 }
 
 func (b *Ball) Update(dt float32) {
@@ -25,5 +28,5 @@ func (b *Ball) BounceBack(unitNormal Vector[float32]) {
 }
 
 func (b *Ball) Draw(screen *ebiten.Image) {
-	vector.FillCircle(screen, b.Position.X, b.Position.Y, b.Radius, Blue, false)
+	vector.FillCircle(screen, b.Position.X, b.Position.Y, b.Radius, b.Color, true)
 }

@@ -2,27 +2,23 @@ package main
 
 import (
 	"fmt"
+	"image/color"
+	"math/rand"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
-type Drawable interface {
-	Update() error
-	Draw(screen *ebiten.Image)
+type Level4 struct {
+	Obstacles []*Solid
+	Balls     []Ball
+	TmpShape  *Solid
+	Mode      string
+	IsPaused  bool
 }
 
-type Level3 struct {
-	Balls        []Ball
-	Obstacles    []*Solid
-	Mode         string
-	TmpShape     *Solid
-	NbCollisions int
-	IsRecording  bool
-}
-
-func (l *Level3) HandleDrawingMode() error {
+func (l *Level4) HandleDrawingMode() error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyControlLeft) {
 		l.Mode = "drawing"
 	}
@@ -74,42 +70,35 @@ func (l *Level3) HandleDrawingMode() error {
 	return nil
 }
 
-func (l *Level3) HandleRecording() error {
-
-	if inpututil.IsKeyJustPressed(ebiten.KeyF) {
-		if l.IsRecording {
-			l.StopRecording()
-			l.IsRecording = false
-		} else {
-			widthWindow, heightWindow := ebiten.WindowSize()
-			l.StartRecording(widthWindow, heightWindow)
-			l.IsRecording = true
-		}
-	}
-
-	return nil
-}
-
-func (l *Level3) HandleBallCreation(){
+func (l *Level4) HandleBallCreation() {
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 		if l.Mode == "normal" {
+			xSpeed := float32(rand.Intn(9-5) + 5)
+			ySpeed := float32(rand.Intn(9-5) + 5)
+			rColor := uint8(rand.Intn(255))
+			gColor := uint8(rand.Intn(255))
+			bColor := uint8(rand.Intn(255))
+			ballColor := color.RGBA{R: rColor, G: gColor, B: bColor}
+			radius := float32(rand.Intn(30-5) + 5)
 			xMouse, yMouse := ebiten.CursorPosition()
 			newBall := Ball{
-				Radius:   5,
+				Radius:   radius,
 				Position: Vector[float32]{X: float32(xMouse), Y: float32(yMouse)},
-				Speed:    Vector[float32]{X: 200, Y: 200},
+				Speed:    Vector[float32]{X: xSpeed, Y: ySpeed},
+				Color:    ballColor,
 			}
 			l.Balls = append(l.Balls, newBall)
 		}
 	}
 }
 
-func (l *Level3) HandleCollision(dt float32)  {
+func (l *Level4) HandleCollision(dt float32) {
 	// now we need to update the balls
 	for ballIndex := range len(l.Balls) {
 		l.Balls[ballIndex].Update(dt)
 	}
 
+	// collision with obstacles
 	for ballIndex := range len(l.Balls) {
 		for _, obstacle := range l.Obstacles {
 			for _, edge := range obstacle.Edges {
@@ -123,7 +112,6 @@ func (l *Level3) HandleCollision(dt float32)  {
 					// here the ball is before the edge. All we need is to check the distance between the ball's position and the edge's point
 					if DistanceSquared(l.Balls[ballIndex].Position, edge.A) < l.Balls[ballIndex].Radius*l.Balls[ballIndex].Radius {
 						// collision!
-						l.NbCollisions += 1
 						aToBallEdge := Edge{A: edge.A, B: l.Balls[ballIndex].Position}
 						aToBallEdge.Compute()
 						l.Balls[ballIndex].BounceBack(aToBallEdge.Normalized)
@@ -133,7 +121,6 @@ func (l *Level3) HandleCollision(dt float32)  {
 				} else if distanceAlongEdge > edge.Length {
 					if DistanceSquared(l.Balls[ballIndex].Position, edge.B) < l.Balls[ballIndex].Radius*l.Balls[ballIndex].Radius {
 						// collision!
-						l.NbCollisions += 1
 						bToBallEdge := Edge{A: edge.B, B: l.Balls[ballIndex].Position}
 						bToBallEdge.Compute()
 						l.Balls[ballIndex].BounceBack(bToBallEdge.Normalized)
@@ -149,7 +136,6 @@ func (l *Level3) HandleCollision(dt float32)  {
 					}
 					if absDistanceToEdge < l.Balls[ballIndex].Radius {
 						// collision!
-						l.NbCollisions += 1
 						bounceNormal := edge.Normal
 						if distanceToEdge < 0 {
 							bounceNormal = ScaleVector(bounceNormal, -1)
@@ -173,32 +159,62 @@ func (l *Level3) HandleCollision(dt float32)  {
 		}
 	}
 
-}
-func (l *Level3) Update() error {
+	// collisions with other balls
+	for ballAIndex := range len(l.Balls) {
+		for ballBIndex := ballAIndex; ballBIndex < len(l.Balls); ballBIndex++ {
+			if ballAIndex == ballBIndex {
+				continue
+			}
+			ballToBallEdge := Edge{A: l.Balls[ballAIndex].Position, B: l.Balls[ballBIndex].Position}
+			ballToBallEdge.Compute()
+			overlap := (l.Balls[ballAIndex].Radius + l.Balls[ballBIndex].Radius) - ballToBallEdge.Length
+			if overlap > 0 {
+				// Collision!
+				// I need to move the balls by half the overlap along their normal
+				halfOverlap := overlap / 2
+				overlapVector := ScaleVector(ballToBallEdge.Normalized, halfOverlap)
+				l.Balls[ballAIndex].Position.Sub(overlapVector)
+				l.Balls[ballBIndex].Position.Add(overlapVector)
 
-	// if the user is currently drawing, we handle it
+				relativeVelocity := SubVectors(l.Balls[ballBIndex].Speed, l.Balls[ballAIndex].Speed)
+				approachSpeed := relativeVelocity.Dot(ballToBallEdge.Normal)
+				if approachSpeed > 0 {
+					// the balls are moving towards from each other!
+					ballASpeed := l.Balls[ballAIndex].Speed
+					l.Balls[ballAIndex].Speed = l.Balls[ballBIndex].Speed
+					l.Balls[ballBIndex].Speed = ballASpeed
+				}
+			}
+		}
+	}
+
+}
+
+func (l *Level4) Update() error {
 	err := l.HandleDrawingMode()
 	if err != nil {
 		return err
 	}
-	err = l.HandleRecording()
-	if err != nil {
-		return err
-	}
-
 	l.HandleBallCreation()
 
+	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
+		l.IsPaused = !l.IsPaused
+	}
 	// substeps are used to avoid having balls "teleporting" through walls
-	l.NbCollisions = 0
-	nbSubsteps := 100
+	nbSubsteps := 10
+	dt := float32(1) / float32(nbSubsteps)
+	if l.IsPaused {
+		dt = 0
+	}
 	for _ = range nbSubsteps {
-		l.HandleCollision(float32(1) / float32(nbSubsteps))
+		l.HandleCollision(dt)
 	}
 
 	return nil
 }
 
-func (l *Level3) Draw(screen *ebiten.Image) {
+func (l *Level4) Draw(screen *ebiten.Image) {
+	screen.Fill(color.RGBA{R: 128, G: 128, B: 128})
 	for _, obst := range l.Obstacles {
 		obst.Draw(screen)
 	}
@@ -208,16 +224,18 @@ func (l *Level3) Draw(screen *ebiten.Image) {
 	for _, ball := range l.Balls {
 		ball.Draw(screen)
 	}
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("mode: %s\nrecording: %v\nnb balls: %d", l.Mode, l.IsRecording, len(l.Balls)))
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("mode: %s\nnb balls: %d", l.Mode, len(l.Balls)))
 }
 
-func (l *Level3) Layout(outsideWidth, outsideHeight int) (int, int) {
+func (l *Level4) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return outsideWidth, outsideHeight
 }
 
-func Level3Init() *Level3 {
-	g := Level3{}
-	g.Mode = "normal"
+func Level4Init() *Level4 {
+	game := Level4{
+		Mode: "normal",
+	}
 
-	return &g
+	return &game
+
 }

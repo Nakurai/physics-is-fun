@@ -13,6 +13,12 @@ func (v *Vector[T]) Add(v2 Vector[T]) {
 	v.Y += v2.Y
 }
 
+// Add updates the vector by substracting v2
+func (v *Vector[T]) Sub(v2 Vector[T]) {
+	v.X -= v2.X
+	v.Y -= v2.Y
+}
+
 // Add updates the vector by multiplying v2
 func (v *Vector[T]) Times(v2 Vector[T]) {
 	v.X *= v2.X
