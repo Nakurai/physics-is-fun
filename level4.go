@@ -3,14 +3,23 @@ package main
 import (
 	"fmt"
 	"image/color"
-	"math/rand"
+	"os"
 
+	"github.com/ebitenui/ebitenui"
+	"github.com/ebitenui/ebitenui/widget"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 type Level4 struct {
+	ui *ebitenui.UI
+	rootContainer *widget.Container 
+	loadDialog  *widget.Container
+	saveDialog  *widget.Container
+    saveInput   *widget.TextInput
+	showingSave bool
+	showingLoad bool
 	Obstacles []*Solid
 	Balls     []Ball
 	TmpShape  *Solid
@@ -73,22 +82,38 @@ func (l *Level4) HandleDrawingMode() error {
 func (l *Level4) HandleBallCreation() {
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 		if l.Mode == "normal" {
-			xSpeed := float32(rand.Intn(9-5) + 5)
-			ySpeed := float32(rand.Intn(9-5) + 5)
-			rColor := uint8(rand.Intn(255))
-			gColor := uint8(rand.Intn(255))
-			bColor := uint8(rand.Intn(255))
-			ballColor := color.RGBA{R: rColor, G: gColor, B: bColor}
-			radius := float32(rand.Intn(30-5) + 5)
 			xMouse, yMouse := ebiten.CursorPosition()
-			newBall := Ball{
-				Radius:   radius,
-				Position: Vector[float32]{X: float32(xMouse), Y: float32(yMouse)},
-				Speed:    Vector[float32]{X: xSpeed, Y: ySpeed},
-				Color:    ballColor,
-			}
+			newBall := GetNewBall(xMouse, yMouse)
 			l.Balls = append(l.Balls, newBall)
 		}
+	}
+}
+
+
+func (l *Level4) HandleQuit(){
+	
+	if l.Mode == "normal" && inpututil.IsKeyJustPressed(ebiten.KeyEscape) && !l.showingSave && !l.showingLoad{
+		os.Exit(0)
+	}
+}
+
+
+func (l *Level4) HandleSave(){
+	if l.Mode == "normal" && inpututil.IsKeyJustPressed(ebiten.KeyS) && !l.showingSave{
+		l.showSaveDialog()
+	}
+	if l.Mode == "normal" && inpututil.IsKeyJustPressed(ebiten.KeyEscape) && l.showingSave{
+		l.hideSaveDialog()
+	}
+}
+
+
+func (l *Level4) HandleLoad(){
+	if inpututil.IsKeyJustPressed(ebiten.KeyL) && !l.showingLoad && !l.showingSave {
+    	l.showLoadDialog()
+	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) && l.showingLoad {
+		l.hideLoadDialog()
 	}
 }
 
@@ -191,11 +216,21 @@ func (l *Level4) HandleCollision(dt float32) {
 }
 
 func (l *Level4) Update() error {
+	l.HandleQuit()
+	l.ui.Update() 
+	l.HandleSave()
+	l.HandleLoad()
+	
+	if l.showingSave{
+		return nil
+	}
+	
+	l.HandleBallCreation()
+
 	err := l.HandleDrawingMode()
 	if err != nil {
 		return err
 	}
-	l.HandleBallCreation()
 
 	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
 		l.IsPaused = !l.IsPaused
@@ -224,6 +259,7 @@ func (l *Level4) Draw(screen *ebiten.Image) {
 	for _, ball := range l.Balls {
 		ball.Draw(screen)
 	}
+	l.ui.Draw(screen) 
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("mode: %s\nnb balls: %d", l.Mode, len(l.Balls)))
 }
 
@@ -232,9 +268,18 @@ func (l *Level4) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func Level4Init() *Level4 {
+
 	game := Level4{
 		Mode: "normal",
 	}
+
+	game.rootContainer = widget.NewContainer(
+        widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
+    )
+
+    game.ui = &ebitenui.UI{Container: game.rootContainer}
+
+	game.buildSaveDialog()
 
 	return &game
 

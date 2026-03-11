@@ -2,6 +2,7 @@ package main
 
 import (
 	"image/color"
+	"math/rand"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
@@ -29,4 +30,19 @@ func (b *Ball) BounceBack(unitNormal Vector[float32]) {
 
 func (b *Ball) Draw(screen *ebiten.Image) {
 	vector.FillCircle(screen, b.Position.X, b.Position.Y, b.Radius, b.Color, true)
+}
+
+func GetNewBall(x, y int) Ball{
+	xSpeed := float32(rand.Intn(9-5) + 5)
+	ySpeed := float32(rand.Intn(9-5) + 5)
+	ballColor := getRandomColor()
+	radius := float32(rand.Intn(30-5) + 5)
+	
+	newBall := Ball{
+		Radius:   radius,
+		Position: Vector[float32]{X: float32(x), Y: float32(y)},
+		Speed:    Vector[float32]{X: xSpeed, Y: ySpeed},
+		Color:    ballColor,
+	}
+	return newBall
 }
